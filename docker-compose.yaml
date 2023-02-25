@@ -1,0 +1,25 @@
+version: '3.4'
+
+services:
+  detect-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: $IMAGE_NAME
+    container_name: $CONTAINER_NAME
+    volumes:
+      - $PWD:/app
+      - /home/ubuntu/central_log/detect:/app/logs
+    working_dir: /app
+    entrypoint: ["python3.9", "app.py", "$CONFIG_SET"]
+    ports:
+      - "$EXPOSE_PORT:$EXPOSE_PORT"
+    # networks:
+    #   ai_service:
+    #     aliases:
+    #       - ai_detect_
+    restart: always
+
+# networks:
+#     ai_service:
+#       external: true

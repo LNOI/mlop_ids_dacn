@@ -1,0 +1,44 @@
+variables:
+  CONTAINER_IMAGE: registry.gitlab.com/mlops_uit/mlop_ids_dacn/$CI_PROJECT_NAME
+  STABLE_IMAGE_TAG: $CI_COMMIT_REF_SLUG-latest-stable
+  ARCHIVE_IMAGE_TAG: $CI_COMMIT_REF_SLUG-$CI_COMMIT_SHA
+  SLEEP_WHEN_START_CONTAINER: 10
+
+stages: # List of stages for jobs, and their order of execution
+  - train
+
+before_script:
+  - docker info
+  - docker-compose --version
+  - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
+  - echo $USER
+  - echo $(id -u)
+  - echo $(id -g)
+
+
+IDS-train-job: # This job runs in the build stage, which runs first.
+  variables:
+    EXPOSE_PORT: 9876
+    CONTAINER_NAME: ids_detect-$EXPOSE_PORT
+    CONFIG_SET: prod
+    IMAGE_NAME: $CONTAINER_IMAGE:$STABLE_IMAGE_TAG
+    SERVICE_NAME: detect-server
+  stage: train
+  tags:
+    - VPS_UIT_PROD
+  only:
+    - main
+    - production
+  script:
+    - rm -rf .git
+    - rm -rf .gitlab-ci.yml
+    - rm -rf .gitattributes
+
+    - echo "Build service $SERVICE_NAME -> container $CONTAINER_NAME from $IMAGE_NAME for testing ..."
+    - CURRENT_UID=$(id -u):$(id -g) docker-compose -f docker-compose.yaml down --remove-orphans
+    - CURRENT_UID=$(id -u):$(id -g) docker-compose -f docker-compose.yaml build --force-rm
+    - docker-compose -f docker-compose.yaml up -d --remove-orphans $SERVICE_NAME
+    - sleep 10
+    - echo "Training model complete."
+  when: on_success
+

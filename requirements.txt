@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+requests
+tensorflow
+scikit-learn
+matplotlib
+pandas
+mino
+kfp
+wget
